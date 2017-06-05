@@ -8,8 +8,13 @@ GO_BP_groupB_down = read.xls ("/Users/maryhoekstra/Desktop/GO_BP_EarlyVsLate_reg
 GO_BP_groupA_up = read.xls ("/Users/maryhoekstra/Desktop/GO_BP_EarlyVsLate_regulated.xlsx", sheet = 3, header = TRUE)
 GO_BP_groupB_up = read.xls ("/Users/maryhoekstra/Desktop/GO_BP_EarlyVsLate_regulated.xlsx", sheet = 4, header = TRUE)
 
+GO_BP_groupB_incDay7 = read.xls("/Users/maryhoekstra/Desktop/GO_BP_EarlyVsLate.xlsx", sheet = 3, header = TRUE)
+GO_BP_groupA_day1vs7 = read.xls("/Users/maryhoekstra/Desktop/GO_BP_EarlyVsLate.xlsx", sheet = 4, header = TRUE)
+GO_BP_groupB_day1vs7 = read.xls("/Users/maryhoekstra/Desktop/GO_BP_EarlyVsLate.xlsx", sheet = 5, header = TRUE)
+GO_BP_groupA_day1vs3 = read.xls("/Users/maryhoekstra/Desktop/GO_BP_EarlyVsLate.xlsx", sheet = 6, header = TRUE)
+GO_BP_groupB_day1vs3 = read.xls("/Users/maryhoekstra/Desktop/GO_BP_EarlyVsLate.xlsx", sheet = 7, header = TRUE)
 
-createVenn <- function(groupA,groupB,titleString) {
+createVenn <- function(groupA,groupB,titleString,groupAstring,groupBstring) {
   groupATerms <- groupA$Term
   groupBTerms <- groupB$Term
   commonTerms <- intersect(groupATerms,groupBTerms)
@@ -32,7 +37,7 @@ createVenn <- function(groupA,groupB,titleString) {
   # create venn diagram object
   v <- venn.diagram(
     x = list(groupATerms,groupBTerms),
-    category.names = c("A","B"),
+    category.names = c(groupAstring,groupBstring),
     filename = NULL,
     fill = c('yellow', 'purple'),
     main=titleString,
@@ -56,7 +61,11 @@ createVenn <- function(groupA,groupB,titleString) {
   
 }
 
-createVenn(GO_BP_groupA_down,GO_BP_groupB_down,"Upregulated pathways in late samples")
-createVenn(GO_BP_groupA_up,GO_BP_groupB_up,"Downregulated pathways in late samples")
+createVenn(GO_BP_groupA_down,GO_BP_groupB_down,"Upregulated pathways in late samples","A","B")
+createVenn(GO_BP_groupA_up,GO_BP_groupB_up,"Downregulated pathways in late samples","A","B")
 
+createVenn(GO_BP_groupB,GO_BP_groupB_incDay7,"Differentially expressed pathways","W/O Day 7", "W/ Day 7")
+createVenn(GO_BP_groupB,GO_BP_groupB_incDay7,"Differentially expressed pathways","W/O Day 7", "W/ Day 7")
 
+createVenn(GO_BP_groupA_day1vs7,GO_BP_groupB_day1vs7,"Differentially expressed pathways between baseline and day 7","A","B")
+createVenn(GO_BP_groupA_day1vs3,GO_BP_groupB_day1vs3,"Differentially expressed pathways between baseline and day 3","B","A") # swap labels since A is empty
