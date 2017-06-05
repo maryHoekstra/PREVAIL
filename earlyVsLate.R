@@ -1,18 +1,32 @@
 # look at differential expression between early vs. late samples in group A and group B
-# early = day 1, late = days 14, 21, 28
 
-earlyVsLate <- function(groupCode) {
+# earlyVsLate takes an Expression Set, a group code, and vectors specifying which days are considered early and which days are considered late
+earlyVsLate <- function(filteredESet,groupCode,earlyDays,lateDays) {
   
   # create expression set with desired group code
   oneGroup.eset <- filtered.eset[ , filtered.eset$code==groupCode]
   
   # create expression set with only early and late samples 
-  earlyLate.eset <- oneGroup.eset[ , oneGroup.eset$Day == "day 1" | oneGroup.eset$Day == 'day 14' | oneGroup.eset$Day == 'day 21' | oneGroup.eset$Day == 'day 28']
-  early <- as.integer(earlyLate.eset$Day == 'day 1')
-  late <- as.integer(earlyLate.eset$Day == 'day 14' | earlyLate.eset$Day == 'day 21' | earlyLate.eset$Day == 'day 28')
+  earlyLateDays = c(earlyDays,lateDays)
+  earlyLateIndices <- logical(ncol(oneGroup.eset))
+  for (i in 1:length(earlyLateDays)) {
+    earlyLateIndices <- earlyLateIndices | oneGroup.eset$Day==earlyLateDays[i]
+  }
+  
+  earlyLate.eset <- oneGroup.eset[,earlyLateIndices]
+  
+  earlyIndices <- logical(ncol(earlyLate.eset))
+  for (i in 1:length(earlyDays)) {
+    earlyIndices <- earlyIndices | earlyLate.eset$Day==earlyDays[i]
+  }
+  
+  lateIndices <- logical(ncol(earlyLate.eset))
+  for (i in 1:length(lateDays)) {
+    lateIndices <- lateIndices | earlyLate.eset$Day==lateDays[i]
+  }
   
   # create design matrix with the two groups we are interested in 
-  design <- cbind(early, late)
+  design <- cbind(as.numeric(earlyIndices),as.numeric(lateIndices))
   colnames(design) <- c('early', 'late')
   EvsL <- "early-late"
   
@@ -38,13 +52,17 @@ getGeneList <- function(diffsWithAnno) {
 }
 
 
-diffsA <- earlyVsLate('A')
-geneListA <- getGeneList(diffsA)
-write(geneListA,file="/Users/maryhoekstra/Desktop/A.txt")
+earlyDays <- c("day 1")
+lateDays <- c("day 14", "day 21", "day 28")
 
-diffsB <- earlyVsLate('B')
+
+diffsA <- earlyVsLate(filtered.eset,'A',earlyDays,lateDays)
+geneListA <- getGeneList(diffsA)
+write(geneListA,file="/Users/maryhoekstra/Desktop/A_day1vs3.txt")
+
+diffsB <- earlyVsLate(filtered.eset,'B')
 geneListB <- getGeneList(diffsB)
-write(geneListB,file="/Users/maryhoekstra/Desktop/B.txt")
+write(geneListB,file="/Users/maryhoekstra/Desktop/B_day1vs3.txt")
 
 commonGenes <- intersect(geneListA,geneListB)
 write(commonGenes,file="/Users/maryhoekstra/Desktop/common.txt")
