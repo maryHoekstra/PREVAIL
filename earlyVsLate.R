@@ -1,6 +1,6 @@
 # look at differential expression between early vs. late samples in group A and group B
 
-# earlyVsLate takes an Expression Set, a group code, and vectors specifying which days are considered early and which days are considered late
+# subsets an expression set based on group code and samples from specific days
 getESet <- function(filteredESet,groupCode,earlyDays,lateDays) {
   
   # create expression set with desired group code
@@ -17,6 +17,7 @@ getESet <- function(filteredESet,groupCode,earlyDays,lateDays) {
   return (earlyLate.eset)
 }
 
+# creates design matrix using smaller expression set
 createDesign <- function(earlyLateESet) {  
   earlyIndices <- logical(ncol(earlyLateESet))
   for (i in 1:length(earlyDays)) {
@@ -34,6 +35,7 @@ createDesign <- function(earlyLateESet) {
   return (design)
 }
  
+# gets a table of top differentially expressed probes from limma analysis
 getDiffs <- function(earlyLateESet,design) {
   EvsL <- "early-late"
   diffs <- runLimma(exprs(earlyLateESet),design,EvsL)
@@ -43,10 +45,12 @@ getDiffs <- function(earlyLateESet,design) {
   return(diffsWithAnno)
 }
 
+# splits entries containing slashes
 splitGeneList <-function(x) {
   return(strsplit(as.character(x), '///')[[1]])
 }
 
+# gets a list of entrez gene IDs from the diffs table
 getGeneList <- function(diffsWithAnno) {
   geneEntrez <- dplyr::select(diffsWithAnno, Entrez.Gene)
   geneList <- unlist(sapply(geneEntrez[,1], splitGeneList))
@@ -57,7 +61,7 @@ getGeneList <- function(diffsWithAnno) {
 
 
 earlyDays <- c("day 1")
-lateDays <- c("day 14", "day 21", "day 28")
+lateDays <- c("day 7")
 
 earlyVsLateESet_A <- getESet(filtered.eset,'A',earlyDays,lateDays)
 designA <- createDesign(earlyVsLateESet_A)
@@ -65,7 +69,9 @@ diffsA <- getDiffs(earlyVsLateESet_A,designA)
 geneListA <- getGeneList(diffsA)
 write(geneListA,file="/Users/maryhoekstra/Desktop/A_day1vs3.txt")
 
-diffsB <- earlyVsLate(filtered.eset,'B',earlyDays,lateDays)
+earlyVsLateESet_B <- getESet(filtered.eset,'B',earlyDays,lateDays)
+designB <- createDesign(earlyVsLateESet_B)
+diffsB <- getDiffs(earlyVsLateESet_B,designB)
 geneListB <- getGeneList(diffsB)
 write(geneListB,file="/Users/maryhoekstra/Desktop/B.txt")
 
