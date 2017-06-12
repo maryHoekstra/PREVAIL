@@ -1,5 +1,16 @@
 # based on WGCNA tutorial at https://labs.genetics.ucla.edu
 
+# cluster samples to see if there is any obvious outliers
+sampleTree = hclust(dist(collapsedExprs), method = "average");
+# Plot the sample tree: Open a graphic output window of size 12 by 9 inches
+# The user should change the dimensions if the window is too large or too small.
+sizeGrWindow(12,9)
+#pdf(file = "Plots/sampleClustering.pdf", width = 12, height = 9);
+par(cex = 0.6)
+par(mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
+     cex.axis = 1.5, cex.main = 2)
+
 # choose set of soft-thresholding powers
 candidatePowers = c(c(1:10), seq(from = 12, to=30, by=2))
 
@@ -27,13 +38,3 @@ plot(softThreshold$fitIndices[,1], softThreshold$fitIndices[,5],
      main = paste("Mean connectivity"))
 text(softThreshold$fitIndices[,1], softThreshold$fitIndices[,5], labels=candidatePowers, cex=cex1,col="red")
 
-
-sampleTree = hclust(dist(datExpr0), method = "average");
-# Plot the sample tree: Open a graphic output window of size 12 by 9 inches
-# The user should change the dimensions if the window is too large or too small.
-sizeGrWindow(12,9)
-#pdf(file = "Plots/sampleClustering.pdf", width = 12, height = 9);
-par(cex = 0.6);
-par(mar = c(0,4,2,0))
-plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
-     cex.axis = 1.5, cex.main = 2)
