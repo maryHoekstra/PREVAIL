@@ -1,4 +1,5 @@
 # collapse probes into genes
+library(WGCNA)
 
 collapseProbes <- function(filteredExprs,annoData) {
   
@@ -20,3 +21,18 @@ collapseProbes <- function(filteredExprs,annoData) {
   
   return(collapsedExprs) 
 }
+
+# change rownames of collapsed expression matrix
+
+# for every row of the collapsed expression matrix, if Gene Symbol column contains "///", split string into tokens 
+geneSymbols <- rownames(collapsedExprs)
+for (i in 1:length(geneSymbols)) {
+  rowname <- geneSymbols[i]
+  if (grepl("///",rowname)) {
+    tokens <- strsplit(rowname,"///")
+    tokenArray <- tokens[[1]]
+    # append first symbol
+    geneSymbols[i] <- trimws(tokenArray[1])
+  }
+}
+rownames(collapsedExprs) <- geneSymbols
