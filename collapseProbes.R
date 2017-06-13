@@ -22,6 +22,8 @@ collapseProbes <- function(filteredExprs,annoData) {
   return(collapsedExprs) 
 }
 
+collapsedExprs <- collapseProbes(filteredExprs,annoData)
+
 # change rownames of collapsed expression matrix
 
 # for every row of the collapsed expression matrix, if Gene Symbol column contains "///", split string into tokens 
