@@ -3,8 +3,8 @@ library(limma)
 library(statmod)
 
 # given an expression set and contrasts, performs differential expression analysis on expression data
-# contrastsDesign is a design matrix with the two groups we are interested in comparing
-# contrastsString specifies how we wish to compare the two groups ("early-late","late-early",etc)
+# designMatrix is a design matrix with four groups (A.early, A.late, B.early, B.late)
+# contrastsString specifies how we wish to compare the two groups ("A.early-A.late","B.late-B.early",etc)
 runLimma <- function(exprsSet,designMatrix,contrastsString) {
   
   # account for correlations between samples of the same patient

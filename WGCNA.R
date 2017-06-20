@@ -192,3 +192,102 @@ midnightBlueModuleGenes <- (moduleColours=="midnightblue")
 midnightBlueModuleIDs <- genes[midnightBlueModuleGenes]
 write(midnightBlueModuleIDs,file=paste("/Users/maryhoekstra/Desktop/midnightBlueModule.txt"))
 
+# try module preservation analysis between group A and B
+# the gene expression data: columns are genes, rows are arrays (samples)
+# separate data from group A and B
+groupA.eset <- filtered.eset[ , filtered.eset$code=="A"]
+groupA_patientIDs <- colnames(exprs(groupA.eset))
+groupA_sampleIndices <- match(groupA_patientIDs,rownames(datExprs))
+datExprs_A <- datExprs[groupA_sampleIndices,]
+
+# use all samples from group B
+groupB.eset <- filtered.eset[ , filtered.eset$code=="B"]
+groupB_patientIDs <- colnames(exprs(groupB.eset))
+groupB_sampleIndices <- match(groupB_patientIDs,rownames(datExprs))
+datExprs_B <- datExprs[groupB_sampleIndices,]
+
+# do blockwise analysis since we have more than 8000 probes on a 4GB laptop
+bwnet = blockwiseModules(datExprs_A, maxBlockSize = 6074,
+                         power = 28, networkType= "signed", TOMType = "signed", minModuleSize = 30,
+                         reassignThreshold = 0, mergeCutHeight = 0.25,
+                         numericLabels = TRUE,
+                         corType = "bicor",
+                         saveTOMs = TRUE,
+                         saveTOMFileBase = "TOM-blockwise",
+                         verbose = 3)
+groupALabels <- bwnet$colors
+numModulesA <- max(groupALabels)
+groupAColours = labels2colors(groupALabels)
+
+setLabels = c("A", "B")
+multiExpr = list(A = list(data = datExprs_A), Male = list(data = datExprs_B))
+multiColour = list(A = groupAColours)
+
+system.time( {
+  mp = modulePreservation(multiExpr, multiColour,
+                          referenceNetworks = 1,
+                          nPermutations = 200,
+                          randomSeed = 1,
+                          quickCor = 0,
+                          verbose = 3)
+} )
+# Save the results
+save(mp, file = "modulePreservation.RData")
+
+ref = 1
+test = 2
+statsObs = cbind(mp$quality$observed[[ref]][[test]][, -1], mp$preservation$observed[[ref]][[test]][, -1])
+statsZ = cbind(mp$quality$Z[[ref]][[test]][, -1], mp$preservation$Z[[ref]][[test]][, -1])
+# Compare preservation to quality:
+print( cbind(statsObs[, c("medianRank.pres", "medianRank.qual")],
+             signif(statsZ[, c("Zsummary.pres", "Zsummary.qual")], 2)) )
+
+# Module labels and module sizes are also contained in the results
+modColors = rownames(mp$preservation$observed[[ref]][[test]])
+moduleSizes = mp$preservation$Z[[ref]][[test]][, 1]
+
+# leave grey and gold modules out (jk)
+plotMods = !(logical(length(modColors)))
+# Text labels for points
+text = modColors[plotMods];
+# Auxiliary convenience variable
+plotData = cbind(mp$preservation$observed[[ref]][[test]][, 2], mp$preservation$Z[[ref]][[test]][, 2])
+# Main titles for the plot
+mains = c("Preservation Median rank", "Preservation Zsummary");
+# Start the plot
+sizeGrWindow(10, 5);
+#pdf(fi="Plots/BxHLiverFemaleOnly-modulePreservation-Zsummary-medianRank.pdf", wi=10, h=5)
+par(mfrow = c(1,2))
+par(mar = c(4.5,4.5,2.5,1))
+for (p in 1:2)
+{
+  min = min(plotData[, p], na.rm = TRUE);
+  max = max(plotData[, p], na.rm = TRUE);
+  # Adjust ploting ranges appropriately
+  if (p==2)
+  {
+    if (min > -max/10) min = -max/10
+    ylim = c(min - 0.1 * (max-min), max + 0.1 * (max-min))
+  } else
+    ylim = c(max + 0.1 * (max-min), min - 0.1 * (max-min))
+  plot(moduleSizes[plotMods], plotData[plotMods, p], col = 1, bg = modColors[plotMods], pch = 21,
+       main = mains[p],
+       cex = 2.4,
+       ylab = mains[p], xlab = "Module size", log = "x",
+       ylim = ylim,
+       xlim = c(10, 2000), cex.lab = 1.2, cex.axis = 1.2, cex.main =1.4)
+  labelPoints(moduleSizes[plotMods], plotData[plotMods, p], text, cex = 1, offs = 0.08);
+  # For Zsummary, add threshold lines
+  if (p==2) {
+    abline(h=0)
+    abline(h=2, col = "blue", lty = 2)
+    abline(h=10, col = "darkgreen", lty = 2)
+  } }
+# If plotting into a file, close it
+#dev.off();
+
+# let's see what the least preserved module is
+midnightBlueModuleGenes <- (groupAColours=="midnightblue")
+genes <- colnames(datExprs_A)
+midnightBlueModuleIDs <- genes[midnightBlueModuleGenes]
+write(midnightBlueModuleIDs,file=paste("/Users/maryhoekstra/Desktop/midnightBlueModule_A.txt"))
