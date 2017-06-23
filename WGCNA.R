@@ -1,47 +1,75 @@
 # based on WGCNA tutorial at https://labs.genetics.ucla.edu
 
 library(WGCNA)
-options(stringsAsFactors = FALSE);
+library(cluster)
+options(stringsAsFactors = FALSE)
 
-# transpose expression data so rows are samples and columns are genes
 datExprs <- t(collapsedExprs)
+samples <- rownames(datExprs)
 
-## try subsetting the matrix and see about the scale free topology
-# use all samples from group A
-groupA.eset <- filtered.eset[ , filtered.eset$code=="A"]
-groupA_patientIDs <- colnames(exprs(groupA.eset))
-groupA_sampleIndices <- match(groupA_patientIDs,rownames(datExprs))
-datExprs_A <- datExprs[groupA_sampleIndices,]
+# create expression set with only early and late samples
+early <- c("day 1")
+late <- c("day 14", "day 21", "day 28")
+earlyLate.eset <- getESet(filtered.eset,early,late)
 
-# use all samples from group B
-groupB.eset <- filtered.eset[ , filtered.eset$code=="B"]
-groupB_patientIDs <- colnames(exprs(groupB.eset))
-groupB_sampleIndices <- match(groupB_patientIDs,rownames(datExprs))
-datExprs_B <- datExprs[groupB_sampleIndices,]
+# divide early and late samples
+early.eset <- earlyLate.eset[,earlyLate.eset$Day=="day 1"]
+late.eset <- earlyLate.eset[,earlyLate.eset$Day=="day 14" | earlyLate.eset$Day=="day 21" | earlyLate.eset$Day=="day 28"]
 
-# use only samples at day 3 for both groups
-day3.eset <- filtered.eset[,filtered.eset$Day=="day 3"]
-day3_samples <- colnames(exprs(day3.eset))
-day3_sampleIndices <- match(day3_samples,rownames(datExprs))
-datExprs_day3 <- datExprs[day3_sampleIndices,]
+# divide groups A and B
+early_groupA.eset <- early.eset[ , early.eset$code=="A"]
+late_groupA.eset <- late.eset[, late.eset$code=="A"]
+early_groupB.eset <- early.eset[, early.eset$code=="B"]
+late_groupB.eset <- late.eset[, late.eset$code=="B"]
 
-# use only samples from day 1 in group B
-day1B.eset <- groupB.eset[,groupB.eset$Day=="day 1"]
-day1B_samples <- colnames(exprs(day1B.eset))
-day1B_sampleIndices <- match(day1B_samples,rownames(datExprs))
-datExprs_day1B <- datExprs[day1B_sampleIndices,]
+earlyIndices_A <- match(colnames(exprs(early_groupA.eset)),samples)
+earlyExprs_A <- datExprs[earlyIndices_A,]
+lateIndices_A <- match(colnames(exprs(late_groupA.eset)),samples)
+lateExprs_A <- datExprs[lateIndices_A,]
+earlyIndices_B <- match(colnames(exprs(early_groupB.eset)),samples)
+earlyExprs_B <- datExprs[earlyIndices_B,]
+lateIndices_B <- match(colnames(exprs(late_groupB.eset)),samples)
+lateExprs_B <- datExprs[lateIndices_B,]
 
-# use only samples from day 7 in group B
-day14B.eset <- groupB.eset[,groupB.eset$Day=="day 14"]
-day14B_samples <- colnames(exprs(day14B.eset))
-day14B_sampleIndices <- match(day14B_samples,rownames(datExprs))
-datExprs_day14B <- datExprs[day14B_sampleIndices,]
+lateExprs <- datExprs[c(lateIndices_A,lateIndices_B),]
+
+# one method for removing outliers from groups A and B
+sampleTree_late = hclust(dist(lateExprs), method = "average")
+plot(sampleTree_late, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
+     cex.axis = 1.5, cex.main = 2)
+abline(h = 65, col = "red");
+clust = cutreeStatic(sampleTree_late, cutHeight = 65, minSize = 10)
+table(clust)
+keepSamples = (clust==1)
+lateExprs = lateExprs[keepSamples, ]
+
+# another method for removing outliers based on squared Euclidean distance 
+# note that we transpose the data 
+A=adjacency(t(lateExprs_A),type="distance")
+# this calculates the whole network connectivity 
+k=as.numeric(apply(A,2,sum))-1
+# standardized connectivity 
+Z.k=scale(k)
+# Designate samples as outlying
+# if their Z.k value is below the threshold 
+thresholdZ.k=-2.5 # often -2.5
+# the color vector indicates outlyingness (red) 
+outlierColor=ifelse(Z.k<thresholdZ.k,"red","black")
+# calculate the cluster tree using flashClust or hclust
+sampleTree = hclust(as.dist(1-A), method = "average")
+# Plot the sample dendrogram and the colors underneath. 
+plotDendroAndColors(sampleTree,groupLabels=names(outlierColor), colors=outlierColor,main="Sample dendrogram")
+
+# remove sample 270755 in B
+lateExprs_B <- lateExprs_B[-12,]
+# remove sample 270820 from A
+lateExprs_A <- lateExprs_A[-12,]
 
 # choose set of soft-thresholding powers
 candidatePowers = c(c(1:10), seq(from = 12, to=32, by=2))
 
 # call network topology analysis function
-softThreshold = pickSoftThreshold(datExprs_A,networkType="signed",corFnc="bicor", powerVector = candidatePowers, verbose = 5)
+softThreshold = pickSoftThreshold(lateExprs_B,networkType="signed",corFnc="bicor", powerVector = candidatePowers, verbose = 5)
 
 # plot results
 sizeGrWindow(10,7)
@@ -77,4 +105,5 @@ getModules <- function(datExprs,sfPower) {
 return (bwnet)
 }
 
-bwnetA <- getModules(datExprs_A,12)
+bwnetA <- getModules(datExprs = earlyExprs_A,sfPower = 26)
+bwnetB <- getModules(datExprs = earlyExprs_B,sfPower = 26)
