@@ -32,6 +32,7 @@ lateIndices_B <- match(colnames(exprs(late_groupB.eset)),samples)
 lateExprs_B <- datExprs[lateIndices_B,]
 
 lateExprs <- datExprs[c(lateIndices_A,lateIndices_B),]
+earlyExprs <- datExprs[c(earlyIndices_A,earlyIndices_B),]
 
 # one method for removing outliers from groups A and B
 sampleTree_late = hclust(dist(lateExprs), method = "average")
@@ -44,32 +45,53 @@ keepSamples = (clust==1)
 lateExprs = lateExprs[keepSamples, ]
 
 # another method for removing outliers based on squared Euclidean distance 
-# note that we transpose the data 
-A=adjacency(t(lateExprs_A),type="distance")
-# this calculates the whole network connectivity 
-k=as.numeric(apply(A,2,sum))-1
-# standardized connectivity 
-Z.k=scale(k)
-# Designate samples as outlying
-# if their Z.k value is below the threshold 
-thresholdZ.k=-2.5 # often -2.5
-# the color vector indicates outlyingness (red) 
-outlierColor=ifelse(Z.k<thresholdZ.k,"red","black")
-# calculate the cluster tree using flashClust or hclust
-sampleTree = hclust(as.dist(1-A), method = "average")
-# Plot the sample dendrogram and the colors underneath. 
-plotDendroAndColors(sampleTree,groupLabels=names(outlierColor), colors=outlierColor,main="Sample dendrogram")
+removeOutliers <- function(exprsMatrix) {
+  outlierIDs <- numeric(0)
+  outliers <- TRUE
+  # loop until no more outliers
+  while (outliers) {
+    sampleIDs <- rownames(exprsMatrix)
+    A=adjacency(t(exprsMatrix),type="distance")
+    # this calculates the whole network connectivity 
+    k=as.numeric(apply(A,2,sum))-1
+    # standardized connectivity 
+    Z.k=scale(k)
+    # Designate samples as outlying
+    # if their Z.k value is below the threshold 
+    thresholdZ.k=-2.5 # often -2.5
+    # the color vector indicates outlyingness (red) 
+    outlierColor=ifelse(Z.k<thresholdZ.k,"red","black")
+    # calculate the cluster tree using flashClust or hclust
+    sampleTree = hclust(as.dist(1-A), method = "average")
+    # Plot the sample dendrogram and the colors underneath. 
+    plotDendroAndColors(sampleTree,groupLabels=names(outlierColor), colors=outlierColor,main="Sample dendrogram")
 
-# remove sample 270755 in B
-lateExprs_B <- lateExprs_B[-12,]
-# remove sample 270820 from A
-lateExprs_A <- lateExprs_A[-12,]
+    outlierIndices <- which(outlierColor=="red")
+    outlierIDs <- c(outlierIDs,sampleIDs[outlierIndices])
+    exprsMatrix <- exprsMatrix[-outlierIndices,]
+    if (length(outlierIndices)<1) {
+      outliers=FALSE
+    }
+  }
+    return(outlierIDs)
+}
+outlierIDs_late <- removeOutliers(lateExprs)
+outlierIDs_early <- removeOutliers(earlyExprs)
+outlierIndices_A <- which((rownames(earlyExprs_A) %in% outlierIDs_early))
+outlierIndices_B <- which((rownames(earlyExprs_B) %in% outlierIDs_early))
+outlierIndices_A <- which((rownames(lateExprs_A) %in% outlierIDs_late))
+outlierIndices_B <- which((rownames(lateExprs_B) %in% outlierIDs_late))
+
+earlyExprs_A <- earlyExprs_A[-outlierIndices_A,]
+earlyExprs_B <- earlyExprs_B[-outlierIndices_B,]
+lateExprs_A <- lateExprs_A[-outlierIndices_A,]
+lateExprs_B <- lateExprs_B[-outlierIndices_B,]
 
 # choose set of soft-thresholding powers
 candidatePowers = c(c(1:10), seq(from = 12, to=32, by=2))
 
 # call network topology analysis function
-softThreshold = pickSoftThreshold(lateExprs_B,networkType="signed",corFnc="bicor", powerVector = candidatePowers, verbose = 5)
+softThreshold = pickSoftThreshold(earlyExprs_B,networkType="signed",corFnc="bicor", powerVector = candidatePowers, verbose = 5)
 
 # plot results
 sizeGrWindow(10,7)
