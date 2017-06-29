@@ -4,31 +4,31 @@
 nSets = 2
 # for easier labeling of plots, create a vector holding descriptive names of the two sets
 setLabels = c("Group A", "Group B")
-shortLabels = c("A", "B")
+shortLabels = c("A","B")
 # form multi-set expression data
 multiExpr = vector(mode = "list", length = nSets)
-multiExpr[[1]] = list(data = earlyExprs_A)
-multiExpr[[2]] = list(data = earlyExprs_B)
+multiExpr[[1]] = list(data = lateExprs_A)
+multiExpr[[2]] = list(data = lateExprs_B)
 
 # check that the data has the correct format for many functions operating on multiple sets:
 exprSize = checkSets(multiExpr)
 
 # find modules for reference set 
-refNet <- getModules(datExprs = earlyExprs_A,sfPower = 26)
-refLabels <- refNet$colors
-refColours <- labels2colors(refLabels)
-refMEs <- moduleEigengenes(lateExprs_B,refColours)$eigengenes
+refNet <- getModules(datExprs = lateExprs_A,sfPower = 26)
+refGeneLabels <- refNet$colors
+refColours <- labels2colors(refGeneLabels)
+refMEs <- moduleEigengenes(lateExprs_A,refColours)$eigengenes
 refMEs = orderMEs(refMEs, greyName = "ME0",greyLast = TRUE)
 
 # find consesus modules
 consNet = blockwiseConsensusModules(
-  multiExpr, maxBlockSize = 6074, power = 26, minModuleSize = 30,
+  multiExpr, maxBlockSize = 6074, power = c(26,16), minModuleSize = 30,
   deepSplit = 2, networkType= "signed", TOMType = "signed",
   corType = "bicor",
   pamRespectsDendro = FALSE,
   mergeCutHeight = 0.25, numericLabels = TRUE,
   minKMEtoStay = 0,
-  saveTOMs = TRUE, verbose = 5)
+  verbose = 5)
 
 consLabels <- consNet$colors
 consColours <- labels2colors(consLabels)
@@ -84,15 +84,8 @@ labeledHeatmap(Matrix = pTable,
                ySymbols = paste("A ", refLabels, ": ", refModTotals, sep=""),
                textMatrix = CountTbl,
                colors = greenWhiteRed(100)[50:100],
-               main = "Correspondence of Group A set-specific and Group A-Group B consensus modules (Day 1)",
+               main = "Correspondence of A-specific and A-B consensus modules (Days 14, 21, 28)",
                cex.text = 1.0, cex.lab = 1.0, setStdMargins = FALSE)
-    
-# explore modules without a low correspondence
-nonpreservedModules <- c("greenyellow")
-for (i in 1:length(nonpreservedModules)) {
-  moduleIDs <- getModuleGenes(geneList=allGenes,geneColours = refColours,moduleColour = nonpreservedModules[i])
-  writeFile(moduleIDs,paste(nonpreservedModules[i],"_BvsConsensus_early",sep = ""))
-}
 
 # compare consensus eigenegene networks
 # are there two modules that are highly related in one set but not the other?
