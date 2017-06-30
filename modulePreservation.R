@@ -24,12 +24,28 @@ findPreservation <- function(refExprs,refPower,refColours,testExprs) {
   return (mp)
 }
 
-mp_A <- findPreservation(refExprs = earlyExprs_A,testExprs = lateExprs_A,refPower = 26)
+mp_AvsB_early <- findPreservation(refExprs = earlyExprs_A,refPower = 26, refColours = refColours,testExprs = earlyExprs_B)
+mp_BvsA_early <- findPreservation(refExprs = earlyExprs_B,refPower = 26, refColours = refColours,testExprs = earlyExprs_A)
+
+mp_BvsA_late <- findPreservation(refExprs = lateExprs_B, refPower = 16, refColours = refColours,testExprs = lateExprs_A)
+mp_AvsB_late <- findPreservation(refExprs = lateExprs_A, refPower = 26, refColours = refColours,testExprs = lateExprs_B)
+
+mp_EvsL_A <- findPreservation(refExprs = earlyExprs_A, refPower = 26, refColours = refColours,testExprs = lateExprs_A)
+mp_LvsE_A <- findPreservation(refExprs = lateExprs_A, refPower = 26, refColours = refColours,testExprs = earlyExprs_A)
+
+mp_EvsL_B <- findPreservation(refExprs = earlyExprs_B, refPower = 26, refColours = refColours,testExprs = lateExprs_B)
+
 mp_B <- findPreservation(refExprs = earlyExprs_,testExprs = lateExprs_B,refPower = 26)
 mp_BvsA_late <- findPreservation(refExprs = lateExprs_B,testExprs = lateExprs_A,refPower = 16)
 # save the results
-save(mp_earlyVsLate_A, file = "modulePreservation_EvsL_A.RData")
-save(mp_earlyVsLate_B, file = "modulePreservation_EvsL_B.RData")
+save(mp_AvsB_early,file="modulePreservation_AvsB_early.RData")
+save(mp_BvsA_early,file="modulePreservation_BvsA_early.RData")
+save(mp_BvsA_late,file="modulePreservation_BvsA_late.RData")
+save(mp_AvsB_late,file="modulePreservation_AvsB_late.RData")
+
+save(mp_EvsL_A, file = "modulePreservation_EvsL_A.RData")
+save(mp_LvsE_A, file = "modulePreservation_LvsE_A.RData")
+save(mp_EvsL_B, file = "modulePreservation_EvsL_B.RData")
 save(mp_BvsA_late, file = "modulePreservation_BvsA_late.RData")
 
 # plot statistics
@@ -81,19 +97,4 @@ for (p in 1:2)
     abline(h=10, col = "darkgreen", lty = 2)
   } }
 
-getModuleGenes <- function(geneList,geneColours,moduleColour) {
-  moduleGenes <- (geneColours==moduleColour)
-  moduleIDs <- geneList[moduleGenes]
-  return (moduleIDs)
-}
-
-writeFile <- function(IDs,fileName) {
-  write(IDs,file=paste("/Users/maryhoekstra/Desktop/",fileName,".txt",sep=""))  
-}
-
-nonpreservedModules <- c("lightcyan")
-for (i in 1:length(nonpreservedModules)) {
-  moduleIDs <- getModuleGenes(geneList=allGenes,geneColours = refColours,moduleColour = nonpreservedModules[i])
-  writeFile(moduleIDs,paste(nonpreservedModules[i],"_BvsA_late",sep = ""))
-}
 

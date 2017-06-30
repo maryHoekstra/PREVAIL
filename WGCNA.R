@@ -58,7 +58,7 @@ removeOutliers <- function(exprsMatrix) {
     Z.k=scale(k)
     # Designate samples as outlying
     # if their Z.k value is below the threshold 
-    thresholdZ.k=-2.5 # often -2.5
+    thresholdZ.k=-2.5
     # the color vector indicates outlyingness (red) 
     outlierColor=ifelse(Z.k<thresholdZ.k,"red","black")
     # calculate the cluster tree using flashClust or hclust
@@ -69,29 +69,42 @@ removeOutliers <- function(exprsMatrix) {
     outlierIndices <- which(outlierColor=="red")
     outlierIDs <- c(outlierIDs,sampleIDs[outlierIndices])
     exprsMatrix <- exprsMatrix[-outlierIndices,]
-    if (length(outlierIndices)<1) {
+    if (length(outlierIndices)<1) 
       outliers=FALSE
-    }
   }
     return(outlierIDs)
 }
-outlierIDs_late <- removeOutliers(lateExprs)
-outlierIDs_early <- removeOutliers(earlyExprs)
-outlierIndices_A <- which((rownames(earlyExprs_A) %in% outlierIDs_early))
-outlierIndices_B <- which((rownames(earlyExprs_B) %in% outlierIDs_early))
-outlierIndices_A <- which((rownames(lateExprs_A) %in% outlierIDs_late))
-outlierIndices_B <- which((rownames(lateExprs_B) %in% outlierIDs_late))
 
-earlyExprs_A <- earlyExprs_A[-outlierIndices_A,]
+outlierIDs_earlyA <- removeOutliers(earlyExprs_A)
+outlierIDs_earlyB <- removeOutliers(earlyExprs_B) # none
+
+outlierIDs_lateA <- removeOutliers(lateExprs_A)
+outlierIDs_lateB <- removeOutliers(lateExprs_B)
+
+outlierIDs_early <- removeOutliers(earlyExprs)
+outlierIDs_late <- removeOutliers(lateExprs)
+
+
+outlierIndices_earlyA <- which((rownames(earlyExprs_A) %in% outlierIDs_early))
+outlierIndices_earlyB <- which((rownames(earlyExprs_B) %in% outlierIDs_early))
+outlierIndices_lateA <- which((rownames(lateExprs_A) %in% outlierIDs_late))
+outlierIndices_lateB <- which((rownames(lateExprs_B) %in% outlierIDs_late))
+
+outlierIndices_earlyA <- which((rownames(earlyExprs_A) %in% outlierIDs_earlyA))
+outlierIndices_lateA <- which((rownames(lateExprs_A) %in% outlierIDs_lateA))
+outlierIndices_lateB <- which((rownames(lateExprs_B) %in% outlierIDs_lateB))
+
+earlyExprs_A <- earlyExprs_A[-outlierIndices_earlyA,]
 earlyExprs_B <- earlyExprs_B[-outlierIndices_B,]
-lateExprs_A <- lateExprs_A[-outlierIndices_A,]
-lateExprs_B <- lateExprs_B[-outlierIndices_B,]
+
+lateExprs_A <- lateExprs_A[-outlierIndices_lateA,]
+lateExprs_B <- lateExprs_B[-outlierIndices_lateB,]
 
 # choose set of soft-thresholding powers
 candidatePowers = c(c(1:10), seq(from = 12, to=32, by=2))
 
 # call network topology analysis function
-softThreshold = pickSoftThreshold(earlyExprs_B,networkType="signed",corFnc="bicor", powerVector = candidatePowers, verbose = 5)
+softThreshold = pickSoftThreshold(lateExprs_B,networkType="signed",corFnc="bicor", powerVector = candidatePowers, verbose = 5)
 
 # plot results
 sizeGrWindow(10,7)
@@ -101,7 +114,7 @@ cex1 = 0.9
 # scale-free topology fit index as a function of the soft-thresholding power
 plot(softThreshold$fitIndices[,1], -sign(softThreshold$fitIndices[,3])*softThreshold$fitIndices[,2],
      xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
-     main = paste("Scale independence"));
+     main = paste("Scale independence - B"));
 text(softThreshold$fitIndices[,1], -sign(softThreshold$fitIndices[,3])*softThreshold$fitIndices[,2],
      labels=candidatePowers,cex=cex1,col="red")
 
@@ -121,8 +134,6 @@ getModules <- function(datExprs,sfPower) {
                            reassignThreshold = 0, mergeCutHeight = 0.25,
                            numericLabels = TRUE,
                            corType = "bicor",
-                           saveTOMs = TRUE,
-                           saveTOMFileBase = "TOM-blockwise",
                            verbose = 3)
 return (bwnet)
 }

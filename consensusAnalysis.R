@@ -3,26 +3,26 @@
 # we work with two sets:
 nSets = 2
 # for easier labeling of plots, create a vector holding descriptive names of the two sets
-setLabels = c("Group A", "Group B")
-shortLabels = c("A","B")
+setLabels = c("Early","Late")
+shortLabels = c("E","L")
 # form multi-set expression data
 multiExpr = vector(mode = "list", length = nSets)
-multiExpr[[1]] = list(data = lateExprs_A)
+multiExpr[[1]] = list(data = earlyExprs_B)
 multiExpr[[2]] = list(data = lateExprs_B)
 
 # check that the data has the correct format for many functions operating on multiple sets:
 exprSize = checkSets(multiExpr)
 
 # find modules for reference set 
-refNet <- getModules(datExprs = lateExprs_A,sfPower = 26)
+refNet <- getModules(datExprs = earlyExprs_B,sfPower = 26)
 refGeneLabels <- refNet$colors
 refColours <- labels2colors(refGeneLabels)
-refMEs <- moduleEigengenes(lateExprs_A,refColours)$eigengenes
+refMEs <- moduleEigengenes(earlyExprs_B,refColours)$eigengenes
 refMEs = orderMEs(refMEs, greyName = "ME0",greyLast = TRUE)
 
 # find consesus modules
 consNet = blockwiseConsensusModules(
-  multiExpr, maxBlockSize = 6074, power = c(26,16), minModuleSize = 30,
+  multiExpr, maxBlockSize = 6074, power = 26, minModuleSize = 30,
   deepSplit = 2, networkType= "signed", TOMType = "signed",
   corType = "bicor",
   pamRespectsDendro = FALSE,
@@ -81,10 +81,10 @@ labeledHeatmap(Matrix = pTable,
                yLabels = paste(" ", refLabels),
                colorLabels = TRUE,
                xSymbols = paste("Cons ", consLabels, ": ", consModTotals, sep=""),
-               ySymbols = paste("A ", refLabels, ": ", refModTotals, sep=""),
+               ySymbols = paste("Early ", refLabels, ": ", refModTotals, sep=""),
                textMatrix = CountTbl,
                colors = greenWhiteRed(100)[50:100],
-               main = "Correspondence of A-specific and A-B consensus modules (Days 14, 21, 28)",
+               main = "Correspondence of Early-specific and Early-Late consensus modules in Group B",
                cex.text = 1.0, cex.lab = 1.0, setStdMargins = FALSE)
 
 # compare consensus eigenegene networks
