@@ -138,5 +138,23 @@ getModules <- function(datExprs,sfPower) {
 return (bwnet)
 }
 
-bwnetA <- getModules(datExprs = earlyExprs_A,sfPower = 26)
-bwnetB <- getModules(datExprs = earlyExprs_B,sfPower = 26)
+### from chapter 12 of book
+
+net <- getModules(exprsData,26) 
+moduleLabelsAutomatic=net$colors
+# Convert labels to colors for plotting
+moduleColorsAutomatic = labels2colors(moduleLabelsAutomatic)
+# A data frame with module eigengenes can be obtained as follows 
+MEsAutomatic=net$MEs
+#this is the body weight
+#weight = as.data.frame(datTraits$weight_g)
+#names(weight)="weight"
+# Next use this trait to define a gene significance variable 
+GS.weight=as.numeric(cor(datExprFemale,weight,use="p"))
+# This translates the numeric values into colors 
+GS.weightColor=numbers2colors(GS.weight,signed=T)
+blocknumber=1 
+datColors=data.frame(moduleColorsAutomatic,GS.weightColor)[net$blockGenes[[blocknumber]],]
+# Plot the dendrogram and the module colors underneath 
+plotDendroAndColors(net$dendrograms[[blocknumber]],colors=datColors, groupLabels=c("Module colors","GS.weight"),dendroLabels=FALSE, hang=0.03,addGuide=TRUE,guideHang=0.05)
+
