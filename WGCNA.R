@@ -2,6 +2,8 @@
 
 library(WGCNA)
 library(cluster)
+library(ggplot2)
+library(reshape2)
 options(stringsAsFactors = FALSE)
 
 datExprs <- t(collapsedExprs)
@@ -9,13 +11,24 @@ samples <- rownames(datExprs)
 
 # create expression set with only early and late samples
 early <- c("day 1")
-late <- c("day 14", "day 21", "day 28")
+late <- c("day 14")
 earlyLate.eset <- getESet(filtered.eset,early,late)
+groupA.eset = earlyLate.eset[,earlyLate.eset$code=="A"]
+groupB.eset = earlyLate.eset[,earlyLate.eset$code=="B"]
+timepointLabels <- sub("day 14","Late",groupB.eset$Day)
+timepointLabels <- sub("day 1","Early",timepointLabels)
+timepointLabels <- sub("day 7","Late",timepointLabels)
+
+timepointLabels <- sub("day 14","Late",earlyLate.eset$Day)
+timepointLabels <- sub("day 1","Early",timepointLabels)
+timepointLabels <- sub("day 7","Late",timepointLabels)
+timepointLabels <- sub("day 3","NA",timepointLabels)
+timepointLabels <- sub("day 21","NA",timepointLabels)
+timepointLabels <- sub("day 28","NA",timepointLabels)
 
 # divide early and late samples
 early.eset <- earlyLate.eset[,earlyLate.eset$Day=="day 1"]
-late.eset <- earlyLate.eset[,earlyLate.eset$Day=="day 14" | earlyLate.eset$Day=="day 21" | earlyLate.eset$Day=="day 28"]
-
+late.eset <- earlyLate.eset[,earlyLate.eset$Day=="day 7" | earlyLate.eset$Day=="day 14"]
 # divide groups A and B
 early_groupA.eset <- early.eset[ , early.eset$code=="A"]
 late_groupA.eset <- late.eset[, late.eset$code=="A"]
@@ -33,6 +46,8 @@ lateExprs_B <- datExprs[lateIndices_B,]
 
 lateExprs <- datExprs[c(lateIndices_A,lateIndices_B),]
 earlyExprs <- datExprs[c(earlyIndices_A,earlyIndices_B),]
+earlyLateA <- datExprs[c(earlyIndices_A,lateIndices_A),]
+earlyLateB <- datExprs[c(earlyIndices_B,lateIndices_B),]
 
 # one method for removing outliers from groups A and B
 sampleTree_late = hclust(dist(lateExprs), method = "average")
@@ -84,6 +99,10 @@ outlierIDs_lateB <- removeOutliers(lateExprs_B)
 outlierIDs_early <- removeOutliers(earlyExprs)
 outlierIDs_late <- removeOutliers(lateExprs)
 
+allOutliers <- removeOutliers(datExprs)
+outlierIndices <- which((rownames(datExprs) %in% allOutliers))
+datExprs <- datExprs[-outlierIndices,]
+
 
 outlierIndices_earlyA <- which((rownames(earlyExprs_A) %in% outlierIDs_early))
 outlierIndices_earlyB <- which((rownames(earlyExprs_B) %in% outlierIDs_early))
@@ -104,7 +123,7 @@ lateExprs_B <- lateExprs_B[-outlierIndices_lateB,]
 candidatePowers = c(c(1:10), seq(from = 12, to=32, by=2))
 
 # call network topology analysis function
-softThreshold = pickSoftThreshold(lateExprs_B,networkType="signed",corFnc="bicor", powerVector = candidatePowers, verbose = 5)
+softThreshold = pickSoftThreshold(earlyExprs,networkType="signed",corFnc="bicor", powerVector = candidatePowers, verbose = 5)
 
 # plot results
 sizeGrWindow(10,7)
@@ -114,7 +133,7 @@ cex1 = 0.9
 # scale-free topology fit index as a function of the soft-thresholding power
 plot(softThreshold$fitIndices[,1], -sign(softThreshold$fitIndices[,3])*softThreshold$fitIndices[,2],
      xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
-     main = paste("Scale independence - B"));
+     main = paste("Scale independence"));
 text(softThreshold$fitIndices[,1], -sign(softThreshold$fitIndices[,3])*softThreshold$fitIndices[,2],
      labels=candidatePowers,cex=cex1,col="red")
 
@@ -138,14 +157,50 @@ getModules <- function(datExprs,sfPower) {
 return (bwnet)
 }
 
-### from chapter 12 of book
+### comparing expression of module eigengenes
 
-net <- getModules(exprsData,26) 
+net <- getModules(datExprs,12) 
 moduleLabelsAutomatic=net$colors
 # Convert labels to colors for plotting
 moduleColorsAutomatic = labels2colors(moduleLabelsAutomatic)
 # A data frame with module eigengenes can be obtained as follows 
 MEsAutomatic=net$MEs
+
+
+# subset into groups A and B and Early vs Late
+allDays <- filtered.eset$Day
+allCodes <- filtered.eset$code
+B <- which(allCodes=="B")
+early <- which(allDays=="day 1")
+late <- which(allDays=="day 14")
+inds <- intersect(B,c(early,late))
+MEsAutomatic <- MEsAutomatic[inds,]
+
+groupA.eset <- baseline.eset[,baseline.eset$code=="A"]
+groupA_indices <- match(colnames(exprs(groupA.eset)),samples)
+datExprsA <- datExprs[groupA_indices,]
+MEs_A <- MEsAutomatic[groupA_indices,]
+
+groupB.eset <- filtered.eset[,filtered.eset$code=="B"]
+groupB_indices <- match(colnames(exprs(groupB.eset)),samples)
+datExprsB <- datExprs[groupB_indices,]
+MEs_B <- MEsAutomatic[groupB_indices,]
+
+
+MEsAutomatic$Timepoint <- factor(timepointLabels)
+df <- melt(MEsAutomatic)
+ggplot(data=df) + geom_boxplot(aes(x=Timepoint,y=value)) + facet_wrap(~variable,scales = "free") + ggtitle("Module Eigenegene Expression - Early vs. Late in Group B") + scale_fill_brewer(palette = "Accent")
+
+library(genefilter)
+# perform a t-test using the colttests function
+ctt <- colttests(data.matrix(MEsAutomatic),MEsAutomatic$Timepoint,tstatOnly = FALSE)
+barplot(ctt$p.value[-20],names.arg = rownames(ctt)[-20],ylim = c(0,1),main = "P-values for A vs. B",xlab = "Module Eigengenes",ylab = "P-values")
+abline(h=0.05,col="red")
+
+
+sizeGrWindow(10,7)
+par(mfrow = c(1,2))
+cex1 = 0.9
 #this is the body weight
 #weight = as.data.frame(datTraits$weight_g)
 #names(weight)="weight"
@@ -153,8 +208,8 @@ MEsAutomatic=net$MEs
 GS.weight=as.numeric(cor(datExprFemale,weight,use="p"))
 # This translates the numeric values into colors 
 GS.weightColor=numbers2colors(GS.weight,signed=T)
-blocknumber=1 
-datColors=data.frame(moduleColorsAutomatic,GS.weightColor)[net$blockGenes[[blocknumber]],]
+blocknumber=3
+datColors=data.frame(moduleColorsAutomatic)[net$blockGenes[[blocknumber]],]
 # Plot the dendrogram and the module colors underneath 
-plotDendroAndColors(net$dendrograms[[blocknumber]],colors=datColors, groupLabels=c("Module colors","GS.weight"),dendroLabels=FALSE, hang=0.03,addGuide=TRUE,guideHang=0.05)
+plotDendroAndColors(net$dendrograms[[blocknumber]],colors=datColors, groupLabels=c("Module colors"),dendroLabels=FALSE, hang=0.03,addGuide=TRUE,guideHang=0.05)
 
