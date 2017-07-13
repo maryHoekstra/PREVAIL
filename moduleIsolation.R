@@ -44,3 +44,17 @@ diffs <- topTable(fit2, adjust='holm',number=10000)
 numUpregulated <- nrow(diffs[diffs$logFC<0,])
 numDownregulated <- nrow(diffs[diffs$logFC>0,])
 percentUpregulated <- numUpregulated/ncol(moduleExprs) * 100
+
+# determine which genes are upregulated or downregulated based on fold changes
+earlySamples <- moduleExprs[which(timepointLabels=="Early"),]
+lateSamples <- moduleExprs[which(timepointLabels=="Late"),]
+earlyMeans <- colMeans(earlySamples)
+lateMeans <- colMeans(lateSamples)
+quotientMeans <- lateMeans/earlyMeans
+logFoldChanges <- log2(quotientMeans)
+# when late > early, the log fold change is positive since log2(+) is also positive
+numUpregulated <- length(logFoldChanges[logFoldChanges>0])
+numDownregulated <- length(logFoldChanges[logFoldChanges<0])
+percentUpregulated <- numUpregulated/length(logFoldChanges) * 100
+
+plot(logFoldChanges)
