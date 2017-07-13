@@ -28,7 +28,7 @@ timepointLabels <- sub("day 28","NA",timepointLabels)
 
 # divide early and late samples
 early.eset <- earlyLate.eset[,earlyLate.eset$Day=="day 1"]
-late.eset <- earlyLate.eset[,earlyLate.eset$Day=="day 7" | earlyLate.eset$Day=="day 14"]
+late.eset <- earlyLate.eset[,earlyLate.eset$Day=="day 14"]
 # divide groups A and B
 early_groupA.eset <- early.eset[ , early.eset$code=="A"]
 late_groupA.eset <- late.eset[, late.eset$code=="A"]
@@ -171,8 +171,10 @@ MEsAutomatic=net$MEs
 allDays <- filtered.eset$Day
 allCodes <- filtered.eset$code
 B <- which(allCodes=="B")
+A <- which(allCodes=="A")
 early <- which(allDays=="day 1")
 late <- which(allDays=="day 14")
+inds <- intersect(A,c(early,late))
 inds <- intersect(B,c(early,late))
 MEsAutomatic <- MEsAutomatic[inds,]
 
@@ -189,12 +191,12 @@ MEs_B <- MEsAutomatic[groupB_indices,]
 
 MEsAutomatic$Timepoint <- factor(timepointLabels)
 df <- melt(MEsAutomatic)
-ggplot(data=df) + geom_boxplot(aes(x=Timepoint,y=value)) + facet_wrap(~variable,scales = "free") + ggtitle("Module Eigenegene Expression - Early vs. Late in Group B") + scale_fill_brewer(palette = "Accent")
+ggplot(data=df) + geom_boxplot(aes(x=Timepoint,y=value)) + facet_wrap(~variable,scales = "free") + ggtitle("Module Eigenegene Expression - Early vs. Late in Group A") + scale_fill_brewer(palette = "Accent")
 
 library(genefilter)
 # perform a t-test using the colttests function
 ctt <- colttests(data.matrix(MEsAutomatic),MEsAutomatic$Timepoint,tstatOnly = FALSE)
-barplot(ctt$p.value[-20],names.arg = rownames(ctt)[-20],ylim = c(0,1),main = "P-values for A vs. B",xlab = "Module Eigengenes",ylab = "P-values")
+barplot(ctt$p.value[-20],names.arg = rownames(ctt)[-20],ylim = c(0,1),main = "P-values - Early vs Late (Group B)",xlab = "Module Eigengenes",ylab = "P-values")
 abline(h=0.05,col="red")
 
 

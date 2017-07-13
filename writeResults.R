@@ -10,8 +10,8 @@ writeFile <- function(IDs,fileName) {
   write(IDs,file=paste("/Users/maryhoekstra/Desktop/",fileName,".txt",sep=""))  
 }
 
-nonpreservedModules <- c("grey60","tan","lightgreen","purple","greenyellow")
+nonpreservedModules <- c(14)
 for (i in 1:length(nonpreservedModules)) {
-  moduleIDs <- getModuleGenes(geneList=allGenes,geneColours = refColours,moduleColour = nonpreservedModules[i])
-  writeFile(moduleIDs,paste(nonpreservedModules[i],"_LvsCons_A",sep = ""))
+  moduleIDs <- getModuleGenes(geneList=allGenes,geneColours = moduleLabelsAutomatic,moduleColour = nonpreservedModules[i])
+  writeFile(moduleIDs,paste(nonpreservedModules[i],"_EvsL_B",sep = ""))
 }
