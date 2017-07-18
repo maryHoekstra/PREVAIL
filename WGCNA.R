@@ -10,7 +10,7 @@ datExprs <- t(collapsedExprs)
 samples <- rownames(datExprs)
 
 # create expression set with only early and late samples
-early <- c("day 1")
+early <- c("day 3")
 late <- c("day 14")
 earlyLate.eset <- getESet(filtered.eset,early,late)
 groupA.eset = earlyLate.eset[,earlyLate.eset$code=="A"]
@@ -25,6 +25,10 @@ timepointLabels <- sub("day 7","Late",timepointLabels)
 timepointLabels <- sub("day 3","NA",timepointLabels)
 timepointLabels <- sub("day 21","NA",timepointLabels)
 timepointLabels <- sub("day 28","NA",timepointLabels)
+
+# expression set with samples from one timepoint
+day3.eset <- filtered.eset[,filtered.eset$Day=="day 3"]
+codeLabels <- droplevels(day3.eset$code)
 
 # divide early and late samples
 early.eset <- earlyLate.eset[,earlyLate.eset$Day=="day 1"]
@@ -173,10 +177,10 @@ allCodes <- filtered.eset$code
 B <- which(allCodes=="B")
 A <- which(allCodes=="A")
 early <- which(allDays=="day 1")
-late <- which(allDays=="day 14")
+late <- which(allDays=="day 28")
 inds <- intersect(A,c(early,late))
 inds <- intersect(B,c(early,late))
-MEsAutomatic <- MEsAutomatic[inds,]
+MEsAutomatic <- MEsAutomatic[early,]
 
 groupA.eset <- baseline.eset[,baseline.eset$code=="A"]
 groupA_indices <- match(colnames(exprs(groupA.eset)),samples)
@@ -190,12 +194,53 @@ MEs_B <- MEsAutomatic[groupB_indices,]
 
 
 MEsAutomatic$Timepoint <- factor(timepointLabels)
+MEsAutomatic$Group <- codeLabels
+
+ME14_day1 <- data.frame(MEsAutomatic[,"ME14"])
+labels_day1 <- codeLabels
+ME14_day1$Group <- labels_day1
+df_day1 <- melt(ME14_day1)
+
+ME14_day3 <- data.frame(ME14_day3)
+labels_day3 <- codeLabels
+ME14_day3$Group <- labels_day3
+df_day3 <- melt(ME14_day3)
+
+ME14_day7 <- data.frame(ME14_day7)
+labels_day7 <- codeLabels
+ME14_day7$Group <- labels_day7
+df_day7 <- melt(ME14_day7)
+
+ME14_day14 <- data.frame(ME14_day14)
+labels_day14 <- codeLabels
+ME14_day14$Group <- labels_day14
+df_day14 <- melt(ME14_day14)
+
+ME14_day21 <- data.frame(ME14_day21)
+labels_day21 <- codeLabels
+ME14_day21$Group <- labels_day21
+df_day21 <- melt(ME14_day21)
+
+ME14_day28 <- data.frame(ME14_day28)
+labels_day28 <- codeLabels
+ME14_day28 <- labels_day28
+
+old.par <- par(mfrow=c(1,4))
+boxplot(ME14_day1[,1]~Group,data=df_day1,main="Day 1")
+boxplot(ME14_day3[,1]~Group,data=df_day3,main="Day 3")
+boxplot(ME14_day7[,1]~Group,data=df_day7,main="Day 7")
+boxplot(ME14_day14[,1]~Group,data=df_day14,main="Day 14")
+par(old.par)
+
+
+
 df <- melt(MEsAutomatic)
+ggplot(data=df_day14) + geom_boxplot(aes(x=Group,y=value)) + facet_wrap(~variable,scales = "free") + ggtitle("Module Eigenegene Expression - Group A vs. B at Day 14") + scale_fill_brewer(palette = "Accent")
 ggplot(data=df) + geom_boxplot(aes(x=Timepoint,y=value)) + facet_wrap(~variable,scales = "free") + ggtitle("Module Eigenegene Expression - Early vs. Late in Group A") + scale_fill_brewer(palette = "Accent")
 
 library(genefilter)
 # perform a t-test using the colttests function
-ctt <- colttests(data.matrix(MEsAutomatic),MEsAutomatic$Timepoint,tstatOnly = FALSE)
+ctt <- colttests(data.matrix(ME14_day14),ME14_day14$Group,tstatOnly = FALSE)
 barplot(ctt$p.value[-20],names.arg = rownames(ctt)[-20],ylim = c(0,1),main = "P-values - Early vs Late (Group B)",xlab = "Module Eigengenes",ylab = "P-values")
 abline(h=0.05,col="red")
 
