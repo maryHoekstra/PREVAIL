@@ -28,9 +28,9 @@ designVec <- as.numeric(sub("Late",0,designVec))
 designMat <- cbind(designVec,!designVec)
 colnames(designMat) <- c("Early","Late")
 patientIDs <- groupA.eset$patient_id
-moduleGenes <- getModuleGenes(geneList=allGenes,geneColours = moduleLabelsAutomatic,moduleColour = 8)
+moduleGenes <- getModuleGenes(geneList=allGenes,geneColours = moduleLabelsAutomatic,moduleColour = 14)
 which_IDs <- match(moduleGenes,colnames(earlyLateA))
-moduleExprs <- earlyLateA[,which_IDs]
+moduleExprs <- earlyLateB[,which_IDs]
 
 
 corfit <- duplicateCorrelation(t(moduleExprs),designMat,block=patientIDs)
@@ -58,3 +58,15 @@ numDownregulated <- length(logFoldChanges[logFoldChanges<0])
 percentUpregulated <- numUpregulated/length(logFoldChanges) * 100
 
 plot(logFoldChanges)
+
+# just look at module eigengenes
+earlySamples <- MEsAutomatic[which(timepointLabels=="Early"),]
+lateSamples <- MEsAutomatic[which(timepointLabels=="Late"),]
+earlyMeans <- colMeans(earlySamples)
+lateMeans <- colMeans(lateSamples)
+quotientMeans <- lateMeans/earlyMeans
+logFoldChanges <- log2(quotientMeans)
+# when late > early, the log fold change is positive since log2(+) is also positive
+numUpregulated <- length(logFoldChanges[logFoldChanges>0])
+numDownregulated <- length(logFoldChanges[logFoldChanges<0])
+percentUpregulated <- numUpregulated/length(logFoldChanges) * 100
