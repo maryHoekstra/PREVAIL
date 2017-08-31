@@ -1,7 +1,19 @@
 # correct for batch effects and filter 
 # read in annotation data 
 
-load("/Users/maryhoekstra/PrevailEset.rda")
+load("prevailAug_eset.rda")
+prevail.eset <- prevailJul3.eset[,1:188] # last 21 samples are healthy controls
+
+# get patient codes
+groupDesignation <- read.csv("PREVAIL_randomization_20170303.csv")
+IDs <- read.csv("PREVAIL_patient_20170303.csv")
+patientIDs <- prevail.eset$patient_id
+seqID_indices <- match(patientIDs,IDs$patient_id)
+patientSeqIDs <- as.character(IDs[seqID_indices,"seq_id"])
+patientCodeIndices <- match(patientSeqIDs,groupDesignation$seq_id)
+patientCodes <- as.character(groupDesignation[patientCodeIndices,"code"])
+
+filtered.eset$code <- patientCodes
 
 # load packages
 library(Biobase)
