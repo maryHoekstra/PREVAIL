@@ -59,18 +59,18 @@ getGeneList <- function(diffsWithAnno) {
 
 
 earlyDays <- c("day 1")
-lateDays <- c("day 14","day 21","day 28")
+lateDays <- c("day 14","day 21", "day 28")
 
 earlyVsLateESet <- getESet(filtered.eset,earlyDays,lateDays)
 design <- createDesign(earlyVsLateESet)
 
 diffsA <- getDiffs(earlyVsLateESet,groupCode="A",design)
 geneListA <- getGeneList(diffsA)
-write(geneListA,file="/Users/maryhoekstra/Desktop/A_new.txt")
+write(geneListA,file="/Users/maryhoekstra/Desktop/A_earlyVsLate2.txt")
 
 diffsB <- getDiffs(earlyVsLateESet,groupCode="B",design)
 geneListB <- getGeneList(diffsB)
-write(geneListB,file="/Users/maryhoekstra/Desktop/B_new.txt")
+write(geneListB,file="/Users/maryhoekstra/Desktop/B_earlyVsLate2.txt")
 
 commonGenes <- intersect(geneListA,geneListB)
 write(commonGenes,file="/Users/maryhoekstra/Desktop/common.txt")

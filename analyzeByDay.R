@@ -1,4 +1,5 @@
 # measure differential expression between groups A and B on a specific day
+library(limma)
 
 # create expression set with only samples from that day
 analyzeByDay <- function(filteredESet,dayString) {
@@ -30,4 +31,9 @@ analyzeByDay <- function(filteredESet,dayString) {
 }
 
 # determine success of randomization by measuring differential expression between groups A and B at baseline
+diffs <- analyzeByDay(filtered.eset, "day 1")
+diffs <- analyzeByDay(filtered.eset, "day 3")
+diffs <- analyzeByDay(filtered.eset, "day 7")
+diffs <- analyzeByDay(filtered.eset, "day 14")
+diffs <- analyzeByDay(filtered.eset, "day 21")
 diffs <- analyzeByDay(filtered.eset, "day 28")
