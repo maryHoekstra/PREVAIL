@@ -1,5 +1,8 @@
+# PREPROCESS DATA
 # correct for batch effects and filter 
-# read in annotation data 
+# read in annotation data
+
+# last modified: January 3rd, 2018
 
 load("prevailAug_eset.rda")
 prevail.eset <- prevailJul3.eset[,1:188] # last 21 samples are healthy controls
@@ -34,8 +37,7 @@ corrected.eset <- prevail.eset
 exprs(corrected.eset) <- correctedExprs
 
 # take the top 50% most variable probes
-# in many tissues, only 40% of genes are expressed
-# IQR is robust to outliers 
+# use IQR as variance func - robust to outliers 
 filtered.eset <- varFilter(corrected.eset, var.func=IQR, var.cutoff=0.5, filterByQuantile=TRUE)
 filteredExprs <- exprs(filtered.eset)
 
@@ -46,7 +48,5 @@ getAnnotation <- function() {
   return(probes)
 }
 annoData <- getAnnotation()
-
-
 
 

@@ -1,4 +1,8 @@
+# LIMMA TEST
 # perform a limma (Empirical Bayes) moderated t-test
+
+# last modified: January 3rd, 2018
+
 library(limma)
 library(statmod)
 
@@ -24,9 +28,8 @@ runLimma <- function(exprsSet,designMatrix,contrastsString) {
   fit2 <- contrasts.fit(fit, cont.matrix)
   fit2 <- eBayes(fit2)
   # adjust p-values based on Holm's method, which controls family-wide error rate
-  diffs <- topTable(fit2, p.value=0.05, adjust='holm', number=500)
-
+  diffs <- topTable(fit2, p.value=0.05, adjust='holm', number=25000)
+  
   return(diffs)
 }
-
 

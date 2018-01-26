@@ -1,4 +1,7 @@
+# EARLY VS LATE
 # look at differential expression between early vs. late samples in group A and group B
+
+# last modified: January 15th, 2018
 
 # subsets an expression set based on samples from specific days
 getESet <- function(filteredESet,earlyDays,lateDays) {
@@ -14,7 +17,7 @@ getESet <- function(filteredESet,earlyDays,lateDays) {
 }
 
 # creates design matrix using smaller expression set
-createDesign <- function(earlyLateESet) {  
+createDesign <- function(earlyLateESet,earlyDays,lateDays) {  
   earlyLateVec <- character(ncol(earlyLateESet))
   earlyIndices <- logical(ncol(earlyLateESet))
   for (i in 1:length(earlyDays)) {
@@ -32,7 +35,7 @@ createDesign <- function(earlyLateESet) {
   colnames(designMatrix) <- levels(designVec)
   return (designMatrix)
 }
- 
+
 # gets a table of top differentially expressed probes for a given group from limma analysis
 getDiffs <- function(earlyLateESet,groupCode,design) {
   contrastsString <- paste(groupCode,".early-",groupCode,".late",sep="")
@@ -59,18 +62,17 @@ getGeneList <- function(diffsWithAnno) {
 
 
 earlyDays <- c("day 1")
-lateDays <- c("day 14","day 21", "day 28")
+lateDays <- c("day 14","day 21","day 28")
 
 earlyVsLateESet <- getESet(filtered.eset,earlyDays,lateDays)
-design <- createDesign(earlyVsLateESet)
-
+design <- createDesign(earlyVsLateESet,earlyDays,lateDays)
 diffsA <- getDiffs(earlyVsLateESet,groupCode="A",design)
 geneListA <- getGeneList(diffsA)
-write(geneListA,file="/Users/maryhoekstra/Desktop/A_earlyVsLate2.txt")
+write(geneListA,file="/Users/maryhoekstra/Desktop/A_day1vs7.txt")
 
 diffsB <- getDiffs(earlyVsLateESet,groupCode="B",design)
 geneListB <- getGeneList(diffsB)
-write(geneListB,file="/Users/maryhoekstra/Desktop/B_earlyVsLate2.txt")
+write(geneListB,file="/Users/maryhoekstra/Desktop/B_day1vs7.txt")
 
 commonGenes <- intersect(geneListA,geneListB)
 write(commonGenes,file="/Users/maryhoekstra/Desktop/common.txt")
